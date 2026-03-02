@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#080C14"/>
+  <!-- Calendar body -->
+  <rect x="4" y="7" width="24" height="21" rx="3" fill="none" stroke="#4B9CD3" stroke-width="1.5"/>
+  <!-- Header fill -->
+  <rect x="4" y="7" width="24" height="8" rx="3" fill="#4B9CD3"/>
+  <rect x="4" y="12" width="24" height="3" fill="#4B9CD3"/>
+  <!-- Binding pegs -->
+  <rect x="10"   y="4" width="2.5" height="6" rx="1.25" fill="#4B9CD3"/>
+  <rect x="19.5" y="4" width="2.5" height="6" rx="1.25" fill="#4B9CD3"/>
+  <!-- Grid row 0 (y=16) -->
+  <rect x="6"  y="16" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.9"/>
+  <rect x="11" y="16" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.5"/>
+  <rect x="16" y="16" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.9"/>
+  <rect x="21" y="16" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.5"/>
+  <!-- Grid row 1 (y=22) -->
+  <rect x="6"  y="22" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.5"/>
+  <rect x="11" y="22" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.9"/>
+  <rect x="16" y="22" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.5"/>
+  <rect x="21" y="22" width="3" height="3" rx="0.75" fill="#4B9CD3" opacity="0.9"/>
+</svg>

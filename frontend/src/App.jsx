@@ -59,8 +59,7 @@ export default function App() {
             fontSize: 28, fontWeight: 600, lineHeight: 1.1,
             color: 'var(--text)',
           }}>
-            Heel<span style={{ color: 'var(--carolina)' }}>'</span>s<br />
-            <span style={{ fontStyle: 'italic', fontWeight: 300 }}>Schedule</span>
+            Heel<span style={{ color: 'var(--carolina)' }}>Plan</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6 }}>
             UNC Chapel Hill · Spring 2026
