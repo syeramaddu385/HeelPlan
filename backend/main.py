@@ -2,9 +2,11 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from pydantic import BaseModel
 
 from app.db import SessionLocal
 from app.models import courses, sections, professor_ratings
+from app.scheduler import generate_schedules, SectionInfo
 
 
 app = FastAPI()
@@ -100,3 +102,52 @@ def get_professor(instructor_name: str, db: Session = Depends(get_db)):
         "num_ratings": rows[0].num_ratings,
         "would_take_again_pct": rows[0].would_take_again_pct,
     }
+
+
+class ScheduleRequest(BaseModel):
+    courses: list[str]   # e.g. ["COMP 210", "COMP 301", "MATH 383"]
+    preferences: dict = {}  # e.g. {"avoid_before": 540, "avoid_after": 1020, "days_off": ["F"]}
+
+
+@app.post("/schedule")
+def build_schedule(req: ScheduleRequest, db: Session = Depends(get_db)):
+    if not req.courses:
+        raise HTTPException(status_code=400, detail="Provide at least one course.")
+
+    sections_by_course: dict[str, list[SectionInfo]] = {}
+
+    for course_key in req.courses:
+        course_normalized = course_key.strip().lower().replace(" ", "")
+
+        course_row = db.query(courses).filter(courses.normalized_course_key == course_normalized).first()
+        if not course_row:
+            raise HTTPException(status_code=404, detail=f"Course '{course_key}' not found.")
+
+        rows = (
+            db.query(sections, professor_ratings)
+            .outerjoin(
+                professor_ratings,
+                (sections.name_key == professor_ratings.name_key)
+                & (professor_ratings.subject == course_row.subject)
+                & (professor_ratings.catalog_number == course_row.catalog_number),
+            )
+            .filter(sections.course_id == course_row.id)
+            .all()
+        )
+
+        sections_by_course[course_row.course_key] = [
+            SectionInfo(
+                course=course_row.course_key,
+                section=sec.class_section,
+                schedule=sec.schedule_raw,
+                days=sec.days,
+                start_min=sec.start_min,
+                end_min=sec.end_min,
+                instructor=sec.instructor_name,
+                avg_quality=rat.avg_quality if rat else None,
+            )
+            for sec, rat in rows
+        ]
+
+    schedules = generate_schedules(sections_by_course, req.preferences)
+    return {"schedules": schedules}
