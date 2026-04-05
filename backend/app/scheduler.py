@@ -86,24 +86,24 @@ def _backtrack(
     chosen: list[SectionInfo],
     sections_by_course: dict[str, list[SectionInfo]],
     preferences: dict,
-    results: list,
+    unique_schedules: dict,
     limit: int,
 ) -> None:
-    if len(results) >= limit:
+    if len(unique_schedules) >= limit:
         return
 
     if index == len(course_keys):
         score = _compute_score(chosen, preferences)
-        results.append((score, list(chosen)))
+        key = tuple(sorted((s.course, s.section) for s in chosen))
+        if key not in unique_schedules:
+            unique_schedules[key] = (score, list(chosen))
         return
 
     for section in sections_by_course[course_keys[index]]:
         if _no_conflict(section, chosen):
             chosen.append(section)
-            _backtrack(course_keys, index + 1, chosen, sections_by_course, preferences, results, limit)
+            _backtrack(course_keys, index + 1, chosen, sections_by_course, preferences, unique_schedules, limit)
             chosen.pop()
-            if len(results) >= limit:
-                return
 
 
 def generate_schedules(
@@ -112,7 +112,7 @@ def generate_schedules(
     top_n: int = 5,
 ) -> list[dict]:
     """
-    Entry point. Returns up to top_n schedules ranked by score.
+    Entry point. Returns up to top_n scstill hedules ranked by score.
 
     sections_by_course: {"COMP 210": [SectionInfo, ...], "MATH 381": [...]}
     preferences: {"avoid_before": 540, "avoid_after": 1020, "days_off": ["F"]}
@@ -121,13 +121,17 @@ def generate_schedules(
 
     # Collect far more than top_n so we have good candidates to rank.
     # Cap total results to avoid exponential blowup on large inputs.
-    raw_limit = max(top_n * 200, 1000)
+    raw_limit = max(top_n * 500, 5000)
 
-    results: list[tuple[float, list[SectionInfo]]] = []
-    _backtrack(course_keys, 0, [], sections_by_course, preferences, results, raw_limit)
+    unique_schedules: dict[tuple, tuple[float, list[SectionInfo]]] = {}
+    _backtrack(course_keys, 0, [], sections_by_course, preferences, unique_schedules, raw_limit)
 
+    # Convert to list and sort by score descending
+    results = list(unique_schedules.values())
     results.sort(key=lambda x: x[0], reverse=True)
 
+    # Return only the actual unique schedules (up to top_n)
+    actual_count = min(len(results), top_n)
     return [
         {
             "score": score,
@@ -145,5 +149,5 @@ def generate_schedules(
                 for s in chosen
             ],
         }
-        for score, chosen in results[:top_n]
+        for score, chosen in results[:actual_count]
     ]
