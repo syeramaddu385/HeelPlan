@@ -1,0 +1,132 @@
+{
+  "constraints": [
+    {
+      "id": "2026-04-07T11:34:05.807290",
+      "title": "Lunch block",
+      "description": "Daily lunch from 12 PM to 1 PM",
+      "constraint_type": "blocked_time",
+      "is_hard_constraint": true,
+      "priority": 8,
+      "recurrence_type": "weekly",
+      "days_of_week": [
+        "M",
+        "T",
+        "W",
+        "H",
+        "F"
+      ],
+      "specific_date": null,
+      "time_range": {
+        "start_min": 720,
+        "end_min": 780
+      },
+      "earliest_start": null,
+      "latest_end": null,
+      "source": "chatbot",
+      "created_at": "2026-04-07T11:34:05.807471",
+      "updated_at": "2026-04-07T11:37:55.919830",
+      "active": false
+    },
+    {
+      "id": "2026-04-07T11:40:41.696654",
+      "title": "Lunch block",
+      "description": "Daily lunch from 12 PM to 1 PM",
+      "constraint_type": "blocked_time",
+      "is_hard_constraint": true,
+      "priority": 8,
+      "recurrence_type": "weekly",
+      "days_of_week": [
+        "M",
+        "T",
+        "W",
+        "H",
+        "F"
+      ],
+      "specific_date": null,
+      "time_range": {
+        "start_min": 720,
+        "end_min": 780
+      },
+      "earliest_start": null,
+      "latest_end": null,
+      "source": "chatbot",
+      "created_at": "2026-04-07T11:40:41.696721",
+      "updated_at": "2026-04-07T11:46:39.562581",
+      "active": false
+    },
+    {
+      "id": "2026-04-07T11:47:13.657593",
+      "title": "Lunch block",
+      "description": "Block lunch from 12 PM to 1 PM on Tuesdays",
+      "constraint_type": "blocked_time",
+      "is_hard_constraint": true,
+      "priority": 8,
+      "recurrence_type": "weekly",
+      "days_of_week": [
+        "T"
+      ],
+      "specific_date": null,
+      "time_range": {
+        "start_min": 720,
+        "end_min": 780
+      },
+      "earliest_start": null,
+      "latest_end": null,
+      "source": "chatbot",
+      "created_at": "2026-04-07T11:47:13.657639",
+      "updated_at": "2026-04-07T11:48:09.986225",
+      "active": false
+    },
+    {
+      "id": "2026-04-07T11:47:46.455392",
+      "title": "Earliest start time",
+      "description": "Start the day at 9 AM at the earliest, everyday",
+      "constraint_type": "earliest_start",
+      "is_hard_constraint": true,
+      "priority": 7,
+      "recurrence_type": "weekly",
+      "days_of_week": [
+        "M",
+        "T",
+        "W",
+        "H",
+        "F"
+      ],
+      "specific_date": null,
+      "time_range": null,
+      "earliest_start": 540,
+      "latest_end": null,
+      "source": "chatbot",
+      "created_at": "2026-04-07T11:47:46.455424",
+      "updated_at": "2026-04-07T11:47:46.455427",
+      "active": true
+    },
+    {
+      "id": "2026-04-07T11:48:09.986059",
+      "title": "Lunch break",
+      "description": "Daily lunch break from 12 PM to 1 PM",
+      "constraint_type": "blocked_time",
+      "is_hard_constraint": true,
+      "priority": 8,
+      "recurrence_type": "weekly",
+      "days_of_week": [
+        "M",
+        "T",
+        "W",
+        "H",
+        "F"
+      ],
+      "specific_date": null,
+      "time_range": {
+        "start_min": 720,
+        "end_min": 780
+      },
+      "earliest_start": null,
+      "latest_end": null,
+      "source": "chatbot",
+      "created_at": "2026-04-07T11:48:09.986105",
+      "updated_at": "2026-04-07T11:48:09.986111",
+      "active": true
+    }
+  ]
+}

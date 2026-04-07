@@ -144,7 +144,7 @@ Response: {
                 "Get an API key from https://aistudio.google.com/app/apikey"
             )
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.5-pro")
+        self.model = genai.GenerativeModel("gemini-2.5-flash-lite")
     
     def interpret(self, user_message: str) -> InterpretationResult:
         """

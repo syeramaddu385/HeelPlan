@@ -27,6 +27,31 @@ export default function App() {
   const [constraints, setConstraints] = useState([])
   const [showChat, setShowChat]     = useState(true)
 
+  const derivePrefsFromConstraints = (constraintList, basePrefs) => {
+    const updated = { ...basePrefs }
+    const earliestStarts = constraintList
+      .filter(c => c.constraint_type === 'earliest_start' && c.earliest_start)
+      .map(c => c.earliest_start)
+    const latestEnds = constraintList
+      .filter(c => c.constraint_type === 'latest_end' && c.latest_end)
+      .map(c => c.latest_end)
+    const daysOff = constraintList
+      .filter(c => c.constraint_type === 'days_off' && c.days_of_week)
+      .flatMap(c => c.days_of_week || [])
+
+    if (earliestStarts.length) {
+      updated.avoid_before = Math.max(...earliestStarts)
+    }
+    if (latestEnds.length) {
+      updated.avoid_after = Math.min(...latestEnds)
+    }
+    if (daysOff.length) {
+      updated.days_off = Array.from(new Set([...(updated.days_off || []), ...daysOff]))
+    }
+
+    return updated
+  }
+
   // Load constraints on mount
   useEffect(() => {
     loadConstraints()
@@ -36,6 +61,7 @@ export default function App() {
     try {
       const data = await getConstraints()
       setConstraints(data)
+      setPrefs(prev => derivePrefsFromConstraints(data, prev))
     } catch (e) {
       console.error('Failed to load constraints:', e)
     }
@@ -44,32 +70,44 @@ export default function App() {
   const addCourse    = (c) => setCourses(p => [...p, c])
   const removeCourse = (c) => setCourses(p => p.filter(x => x !== c))
 
-  const handleConstraintsUpdate = (newConstraints) => {
-    setConstraints(newConstraints)
-  }
-
-  const handleDeleteConstraint = async (id) => {
-    try {
-      await deleteConstraint(id)
-      setConstraints(prev => prev.filter(c => c.id !== id))
-    } catch (e) {
-      console.error('Failed to delete constraint:', e)
-    }
-  }
-
-  const handleBuild = async () => {
+  const handleBuild = async (overridePrefs) => {
     if (courses.length === 0) return
     setLoading(true)
     setError(null)
     setSchedules([])
     try {
-      const result = await buildSchedule(courses, prefs)
+      const schedulePrefs = overridePrefs || prefs
+      const result = await buildSchedule(courses, schedulePrefs)
       setSchedules(result)
       if (result.length === 0) setError('No conflict-free schedules found. Try removing a course or adjusting preferences.')
     } catch (e) {
       setError(e.response?.data?.detail || 'Something went wrong.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConstraintsUpdate = async (newConstraints) => {
+    const derived = derivePrefsFromConstraints(newConstraints, prefs)
+    setConstraints(newConstraints)
+    setPrefs(derived)
+    if (courses.length > 0) {
+      await handleBuild(derived)
+    }
+  }
+
+  const handleDeleteConstraint = async (id) => {
+    try {
+      await deleteConstraint(id)
+      const updatedConstraints = constraints.filter(c => c.id !== id)
+      const derived = derivePrefsFromConstraints(updatedConstraints, prefs)
+      setConstraints(updatedConstraints)
+      setPrefs(derived)
+      if (courses.length > 0) {
+        await handleBuild(derived)
+      }
+    } catch (e) {
+      console.error('Failed to delete constraint:', e)
     }
   }
 

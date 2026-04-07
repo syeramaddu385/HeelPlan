@@ -155,7 +155,22 @@ def build_schedule(req: ScheduleRequest, db: Session = Depends(get_db)):
             for sec, rat in rows
         ]
 
-    schedules = generate_schedules(sections_by_course, req.preferences)
+    store = get_store()
+    stored_preferences = store.to_preferences_dict()
+
+    # Merge active chatbot constraints with any direct schedule request preferences.
+    merged_preferences = stored_preferences.copy()
+    for key, value in req.preferences.items():
+        if value is None:
+            continue
+        if key == "days_off" and value:
+            merged_preferences["days_off"] = list(set(merged_preferences.get("days_off", []) + value))
+        elif key in {"blocked_times", "soft_preferences"} and value:
+            merged_preferences[key] = merged_preferences.get(key, []) + value
+        else:
+            merged_preferences[key] = value
+
+    schedules = generate_schedules(sections_by_course, merged_preferences)
     return {"schedules": schedules}
 
 
