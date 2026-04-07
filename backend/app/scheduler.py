@@ -49,8 +49,33 @@ def _times_overlap(s1: SectionInfo, s2: SectionInfo) -> bool:
     return s1.start_min < s2.end_min and s2.start_min < s1.end_min
 
 
-def _no_conflict(candidate: SectionInfo, chosen: list[SectionInfo]) -> bool:
-    return all(not _times_overlap(candidate, c) for c in chosen)
+def _no_conflict(candidate: SectionInfo, chosen: list[SectionInfo], blocked_times: list = None) -> bool:
+    """
+    Check if candidate section conflicts with chosen sections or blocked times.
+    
+    Args:
+        candidate: Section being considered
+        chosen: Already-chosen sections
+        blocked_times: List of blocked time blocks (dicts with days, start_min, end_min)
+    """
+    # Check against other sections
+    for c in chosen:
+        if _times_overlap(candidate, c):
+            return False
+    
+    # Check against blocked times (hard constraints)
+    if blocked_times and candidate.days and candidate.start_min is not None:
+        for block in blocked_times:
+            block_days = set(block.get("days", []))
+            if set(candidate.days) & block_days:
+                # Times overlap
+                block_start = block.get("start_min")
+                block_end = block.get("end_min")
+                if (block_start is not None and block_end is not None and
+                    candidate.start_min < block_end and block_start < candidate.end_min):
+                    return False
+    
+    return True
 
 
 def _compute_score(chosen: list[SectionInfo], preferences: dict) -> float:
@@ -63,6 +88,7 @@ def _compute_score(chosen: list[SectionInfo], preferences: dict) -> float:
     avoid_before = preferences.get("avoid_before")  # minutes from midnight, e.g. 540 = 9 AM
     avoid_after = preferences.get("avoid_after")    # e.g. 1020 = 5 PM
     days_off = set(preferences.get("days_off") or [])
+    soft_preferences = preferences.get("soft_preferences", [])
 
     time_score = 10.0
     for s in chosen:
@@ -74,6 +100,16 @@ def _compute_score(chosen: list[SectionInfo], preferences: dict) -> float:
             time_score -= 2.0
         if days_off and s.days and set(s.days) & days_off:
             time_score -= 3.0
+        
+        # Apply soft preference penalties
+        for pref in soft_preferences:
+            pref_days = set(pref.get("days", []))
+            if s.days and set(s.days) & pref_days:
+                pref_start = pref.get("start_min")
+                pref_end = pref.get("end_min")
+                if (pref_start is not None and pref_end is not None and
+                    s.start_min < pref_end and pref_start < s.end_min):
+                    time_score -= 1.0
 
     time_score = max(time_score, 0.0)
 
@@ -99,8 +135,10 @@ def _backtrack(
             unique_schedules[key] = (score, list(chosen))
         return
 
+    blocked_times = preferences.get("blocked_times", [])
+    
     for section in sections_by_course[course_keys[index]]:
-        if _no_conflict(section, chosen):
+        if _no_conflict(section, chosen, blocked_times):
             chosen.append(section)
             _backtrack(course_keys, index + 1, chosen, sections_by_course, preferences, unique_schedules, limit)
             chosen.pop()

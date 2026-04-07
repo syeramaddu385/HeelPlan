@@ -10,3 +10,13 @@ export const fetchSections = (course) =>
 
 export const buildSchedule = (courses, preferences) =>
   api.post('/schedule', { courses, preferences }).then(r => r.data.schedules)
+
+// Chatbot & Constraints API
+export const sendChatMessage = (message) =>
+  api.post('/chat', { message }).then(r => r.data)
+
+export const getConstraints = () =>
+  api.get('/constraints').then(r => r.data.constraints)
+
+export const deleteConstraint = (constraintId) =>
+  api.delete(`/constraints/${constraintId}`).then(r => r.data)

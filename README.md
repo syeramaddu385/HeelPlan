@@ -25,10 +25,15 @@ A schedule-building tool for UNC Chapel Hill students. Input your courses and ti
 # Start PostgreSQL
 docker compose up -d
 
-# Backend
+# Backend setup
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env and add your Gemini API key from https://aistudio.google.com/app/apikey
+
 alembic upgrade head
 python data/load_data.py
 uvicorn main:app --reload

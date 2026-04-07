@@ -7,6 +7,9 @@ from pydantic import BaseModel
 from app.db import SessionLocal
 from app.models import courses, sections, professor_ratings
 from app.scheduler import generate_schedules, SectionInfo
+from app.interpreter import ConstraintInterpreter
+from app.constraint_store import get_store
+from app.constraints import InterpretationResult
 
 
 app = FastAPI()
@@ -154,3 +157,96 @@ def build_schedule(req: ScheduleRequest, db: Session = Depends(get_db)):
 
     schedules = generate_schedules(sections_by_course, req.preferences)
     return {"schedules": schedules}
+
+
+# ────────────────────────────────────────────────────────────
+# CHATBOT & CONSTRAINTS API
+# ────────────────────────────────────────────────────────────
+
+class ChatMessage(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    interpretation: dict
+    assistant_message: str
+    constraints: list = []
+    success: bool
+
+
+@app.post("/chat")
+def chat(msg: ChatMessage):
+    """
+    Process a natural language scheduling request via the chatbot.
+    
+    1. Interpret the message with Gemini
+    2. Update constraint store
+    3. Return confirmation and active constraints
+    """
+    try:
+        interpreter = ConstraintInterpreter()
+        result: InterpretationResult = interpreter.interpret(msg.message)
+        
+        store = get_store()
+        
+        # Process based on intent
+        if result.intent == "create":
+            for constraint in result.constraints:
+                # Check for conflicts
+                conflicts = store.find_conflicts(constraint)
+                if conflicts:
+                    # For now, overwrite if same type
+                    for conflict in conflicts:
+                        store.delete(conflict.id)
+                store.add(constraint)
+        
+        elif result.intent == "delete" and result.target_ids:
+            for target_id in result.target_ids:
+                store.delete(target_id)
+        
+        elif result.intent == "update" and result.target_ids:
+            for target_id in result.target_ids:
+                if result.constraints:
+                    store.update(target_id, result.constraints[0].model_dump())
+        
+        # Get all active constraints
+        active_constraints = [c.model_dump() for c in store.get_all_active()]
+        
+        return ChatResponse(
+            interpretation=result.model_dump(),
+            assistant_message=result.summary,
+            constraints=active_constraints,
+            success=result.confirmation
+        )
+    
+    except Exception as e:
+        return ChatResponse(
+            interpretation={},
+            assistant_message=f"Error processing request: {str(e)}",
+            constraints=[],
+            success=False
+        )
+
+
+@app.get("/constraints")
+def get_constraints():
+    """Get all active constraints."""
+    store = get_store()
+    active = [c.model_dump() for c in store.get_all_active()]
+    return {"constraints": active}
+
+
+@app.delete("/constraints/{constraint_id}")
+def delete_constraint(constraint_id: str):
+    """Delete a constraint by ID."""
+    store = get_store()
+    success = store.delete(constraint_id)
+    return {"success": success, "message": "Constraint deleted" if success else "Constraint not found"}
+
+
+@app.post("/constraints/clear")
+def clear_constraints():
+    """Clear all constraints (for testing)."""
+    store = get_store()
+    store.clear_all()
+    return {"message": "All constraints cleared"}
